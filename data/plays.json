@@ -1,0 +1,5 @@
+{
+  "a": {"name": "a", "type": "tragedy"} ,
+  "b": {"name": "b", "type": "comedy"} ,
+  "c": {"name": "c", "type": "tragedy"}
+}

@@ -1,0 +1,17 @@
+[
+  {
+    "customer": "张三",
+    "order": [
+      {
+        "playID": "a",
+        "audienceNumber": 55
+      },{
+        "playID": "b",
+        "audienceNumber": 35
+      },{
+        "playID": "c",
+        "audienceNumber": 40
+      }
+    ]
+  }
+]
