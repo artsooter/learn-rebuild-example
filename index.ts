@@ -10,64 +10,103 @@ import type {
 } from "./entity/rebuildLearnType";
 
 function statement(invoice: Invoice, plays: Plays) {
-  let totalAmount = 0; // 金额
-  let volumeCredits = 0; // 积分
   let result = invoice.customer + "的账单";
 
-  const format = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-  }).format;
+  function totalAmount(orders: Orders) {
+    let result = 0; // 金额
+    for (let aOrder of orders) {
+      result += amountFor(aOrder);
+    }
+    return result;
+  }
 
-  for (let order of invoice.order) {
-    // 对应的那场表演
-    const play = plays[order.playID];
-    let thisAmount = 0;
+  function totalVolumeCredit(orders: Orders) {
+    let result = 0; // 积分
+    for (let aOrder of orders) {
+      result += volumeCreditsFor(aOrder);
+    }
+    return result;
+  }
 
-    switch (play.type) {
+  function usd(aNumber: number) {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+    }).format(aNumber / 100);
+  }
+
+  function playFor(aOrder: Order) {
+    return plays[aOrder.playID];
+  }
+
+  function amountFor(aOrder: Order) {
+    let result = 0;
+    switch (playFor(aOrder).type) {
       case "tragedy": {
-        thisAmount = 40000;
-        if (order.audienceNumber > 30) {
-          thisAmount += 1000 * (order.audienceNumber - 30);
+        result = 40000;
+        if (aOrder.audienceNumber > 30) {
+          result += 1000 * (aOrder.audienceNumber - 30);
         }
         break;
       }
       case "comedy": {
-        thisAmount = 30000;
-        if (order.audienceNumber > 20) {
-          thisAmount += 10000 + 500 * (order.audienceNumber - 20);
+        result = 30000;
+        if (aOrder.audienceNumber > 20) {
+          result += 10000 + 500 * (aOrder.audienceNumber - 20);
         }
-        thisAmount += 300 * order.audienceNumber;
+        result += 300 * aOrder.audienceNumber;
         break;
       }
       default:
-        throw new Error("未知类型：" + play.type);
+        throw new Error("未知类型：" + playFor(aOrder).type);
     }
-
-    // 计算积分
-    volumeCredits += Math.max(order.audienceNumber - 30, 0);
-    // 计算额外的积分
-    if (play.type === "comedy") {
-      volumeCredits += Math.floor(order.audienceNumber / 5);
-    }
-
-    result +=
-      play.name +
-      ":" +
-      format(thisAmount / 100) +
-      "(" +
-      order.audienceNumber +
-      ")" +
-      "\n";
-    totalAmount += thisAmount;
+    return result;
   }
 
-  result += "总共消费：" + format(totalAmount / 100) + "\n";
-  result += "获得积分：" + volumeCredits;
+  function volumeCreditsFor(aOrder: Order) {
+    let result = 0;
+    // 计算积分
+    result += Math.max(aOrder.audienceNumber - 30, 0);
+    // 计算额外的积分
+    if (playFor(aOrder).type === "comedy") {
+      result += Math.floor(aOrder.audienceNumber / 5);
+    }
+    return result;
+  }
+
+  for (let aOrder of invoice.order) {
+    result +=
+      playFor(aOrder).name +
+      ":" +
+      usd(amountFor(aOrder)) +
+      "(" +
+      aOrder.audienceNumber +
+      ")" +
+      "\n";
+  }
+
+  result += "总共消费：" + usd(totalAmount(invoice.order)) + "\n";
+  result += "获得积分：" + totalVolumeCredit(invoice.order);
 
   return result;
 }
 
 const curInvoices = allInvoice[0];
+sampleTest(statement(curInvoices, plays));
 console.log(statement(curInvoices, plays));
+
+function sampleTest(newResponse: string) {
+  const oldResponse =
+    "张三的账单a:$650.00(55)\n" +
+    "b:$580.00(35)\n" +
+    "c:$500.00(40)\n" +
+    "总共消费：$1,730.00\n" +
+    "获得积分：47";
+
+  if (oldResponse == newResponse) {
+    console.log(" --- 测试通过 --- \n");
+  } else {
+    throw new Error("测试不通过");
+  }
+}
